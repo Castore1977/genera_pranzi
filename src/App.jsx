@@ -247,14 +247,14 @@ export default function App() {
   
   // --- API Call & Meal Plan Logic ---
 const callGeminiAPI = async (prompt, schema) => {
-    // La chiave API viene letta in modo sicuro dalla variabile d'ambiente
+    // CORREZIONE: Usa process.env per i progetti creati con Create React App
     const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("Chiave API non trovata. Assicurati di aver configurato .env.local e riavviato il server.");
-      throw new Error("API Key non configurata");
-    }
+    if (!apiKey) {
+      console.error("Chiave API non trovata. Assicurati di aver configurato le Environment Variables su Vercel.");
+      throw new Error("API Key non configurata");
+    }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -425,7 +425,6 @@ const callGeminiAPI = async (prompt, schema) => {
             const link = document.createElement('a');
             link.download = 'piano-pranzi-ufficio.jpeg';
             link.href = canvas.toDataURL('image/jpeg', 0.95);
-            link.click();
         }).catch(err => {
             setError(`Errore durante l'esportazione in JPEG: ${err.message}`);
         }).finally(() => {
