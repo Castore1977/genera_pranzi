@@ -52,9 +52,10 @@ const RegenerationModal = ({ isOpen, onClose, onConfirm, specificIngredients, se
             Conferma e Rigenera
           </button>
         </footer>
+      </div>
     </div>
-    </div>
-);
+  );
+};
 
 
 // Loading Spinner Component
