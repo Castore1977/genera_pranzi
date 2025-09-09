@@ -52,10 +52,9 @@ const RegenerationModal = ({ isOpen, onClose, onConfirm, specificIngredients, se
             Conferma e Rigenera
           </button>
         </footer>
-      </div>
     </div>
-  );
-};
+    </div>
+);
 
 
 // Loading Spinner Component
@@ -190,7 +189,13 @@ export default function App() {
     const newFamily = [...familyMembers];
     const updatedUserInfo = { ...newFamily[index].userInfo, [name]: value };
     
-    newFamily[index] = { ...newFamily[index], userInfo: updatedUserInfo };
+    let newBmr = 0;
+    if (updatedUserInfo.age > 0 && updatedUserInfo.weight > 0 && updatedUserInfo.height > 0) {
+        newBmr = (updatedUserInfo.gender === 'male')
+            ? Math.round(10 * updatedUserInfo.weight + 6.25 * updatedUserInfo.height - 5 * updatedUserInfo.age + 5)
+            : Math.round(10 * updatedUserInfo.weight + 6.25 * updatedUserInfo.height - 5 * updatedUserInfo.age - 161);
+    }
+    newFamily[index] = { ...newFamily[index], userInfo: updatedUserInfo, bmr: newBmr };
     setFamilyMembers(newFamily);
   };
 
@@ -247,14 +252,14 @@ export default function App() {
   
   // --- API Call & Meal Plan Logic ---
 const callGeminiAPI = async (prompt, schema) => {
-    // CORREZIONE: Usa process.env per i progetti creati con Create React App
+    // La chiave API viene letta in modo sicuro dalla variabile d'ambiente
     const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("Chiave API non trovata. Assicurati di aver configurato le Environment Variables su Vercel.");
-      throw new Error("API Key non configurata");
-    }
+    if (!apiKey) {
+      console.error("Chiave API non trovata. Assicurati di aver configurato .env.local e riavviato il server.");
+      throw new Error("API Key non configurata");
+    }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
