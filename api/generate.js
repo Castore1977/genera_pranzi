@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // La chiave API viene letta in modo sicuro dalle variabili d'ambiente di Vercel
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export default async function handler(req, res) {
