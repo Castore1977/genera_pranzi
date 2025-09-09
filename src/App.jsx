@@ -105,28 +105,28 @@ export default function App() {
     bmr: 0,
     tdee: 0,
   };
-  
+  
   // --- State Variables ---
   const [numMembers, setNumMembers] = useState(1);
   const [familyMembers, setFamilyMembers] = useState([defaultMember]);
-  
+  
   const [avoidIngredients, setAvoidIngredients] = useState('');
   const [preferredIngredients, setPreferredIngredients] = useState('');
   const [extraShoppingItems, setExtraShoppingItems] = useState('');
   const [mealPlan, setMealPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  const [isRegenerating, setIsRegenerating] = useState(null); 
+  
+  const [isRegenerating, setIsRegenerating] = useState(null); 
   const [isFetchingRecipe, setIsFetchingRecipe] = useState(false);
   const [isGeneratingList, setIsGeneratingList] = useState(false);
 
-  const [selectedMeal, setSelectedMeal] = useState(null); 
+  const [selectedMeal, setSelectedMeal] = useState(null); 
   const [recipeDetails, setRecipeDetails] = useState(null);
   const [shoppingList, setShoppingList] = useState(null);
   const [isShoppingListModalOpen, setIsShoppingListModalOpen] = useState(false);
   const [copyButtonText, setCopyButtonText] = useState("Copia Testo");
-  
+  
   const [regenModalInfo, setRegenModalInfo] = useState({ isOpen: false, dayIndex: null, mealType: null });
   const [specificRegenIngredients, setSpecificRegenIngredients] = useState('');
   const [imageLibraryLoaded, setImageLibraryLoaded] = useState(false);
@@ -162,7 +162,7 @@ export default function App() {
     const updatedFamily = familyMembers.map(member => {
         const { age, weight, height, gender } = member.userInfo;
         let bmrToUse = member.bmr;
-        
+        
         let calculatedBmr = 0;
         if (age > 0 && weight > 0 && height > 0) {
             calculatedBmr = (gender === 'male')
@@ -183,20 +183,14 @@ export default function App() {
         setFamilyMembers(updatedFamily);
     }
   }, [JSON.stringify(familyMembers.map(m => ({...m.userInfo, activityLevel: m.activityLevel, bmr: m.bmr})))]);
-  
+  
   // --- Handlers ---
   const handleMemberChange = (index, e) => {
     const { name, value } = e.target;
     const newFamily = [...familyMembers];
     const updatedUserInfo = { ...newFamily[index].userInfo, [name]: value };
-    
-    let newBmr = 0;
-    if (updatedUserInfo.age > 0 && updatedUserInfo.weight > 0 && updatedUserInfo.height > 0) {
-        newBmr = (updatedUserInfo.gender === 'male')
-            ? Math.round(10 * updatedUserInfo.weight + 6.25 * updatedUserInfo.height - 5 * updatedUserInfo.age + 5)
-            : Math.round(10 * updatedUserInfo.weight + 6.25 * updatedUserInfo.height - 5 * updatedUserInfo.age - 161);
-    }
-    newFamily[index] = { ...newFamily[index], userInfo: updatedUserInfo, bmr: newBmr };
+    
+    newFamily[index] = { ...newFamily[index], userInfo: updatedUserInfo };
     setFamilyMembers(newFamily);
   };
 
@@ -250,11 +244,16 @@ export default function App() {
     reader.readAsText(file);
     event.target.value = null;
   };
-  
+  
   // --- API Call & Meal Plan Logic ---
 const callGeminiAPI = async (prompt, schema) => {
-    // NOTE: The API key and URL are handled by the system for the canvas environment.
-    const apiKey = "";
+    // La chiave API viene letta in modo sicuro dalla variabile d'ambiente
+    const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("Chiave API non trovata. Assicurati di aver configurato .env.local e riavviato il server.");
+      throw new Error("API Key non configurata");
+    }
+
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
     const payload = {
@@ -290,7 +289,7 @@ const callGeminiAPI = async (prompt, schema) => {
 
   const portionSchema = { type: "OBJECT", properties: { nome_membro: { type: "STRING" }, quantita_suggerita: { type: "STRING" }, calorie_porzione: { type: "NUMBER" }, proteine: { type: "NUMBER" }, carboidrati: { type: "NUMBER" }, grassi: { type: "NUMBER" }}, required: ["nome_membro", "quantita_suggerita", "calorie_porzione", "proteine", "carboidrati", "grassi"]};
   const detailedMealSchema = { type: "OBJECT", properties: { nome: { type: "STRING" }, porzioni: { type: "ARRAY", items: portionSchema }}, required: ["nome", "porzioni"]};
-  
+  
   // Nuova logica di generazione per un unico pasto al giorno (pranzo in ufficio)
   const generateMealPlan = async () => {
     const validMembers = familyMembers.filter(m => m.tdee > 0);
@@ -325,7 +324,7 @@ const callGeminiAPI = async (prompt, schema) => {
       setIsLoading(false);
     }
   };
-  
+  
   const handleConfirmRegeneration = async () => {
     const { dayIndex } = regenModalInfo;
     const validMembers = familyMembers.filter(m => m.tdee > 0);
@@ -335,14 +334,14 @@ const callGeminiAPI = async (prompt, schema) => {
         closeRegenModal();
         return;
     }
-    
+    
     setIsRegenerating({ dayIndex, mealType: 'pasto_ufficio' });
     closeRegenModal();
     setError(null);
 
     const lunchRatio = 0.35;
-    const membersDataForMeal = validMembers.map((m, i) => ({ 
-        nome: m.userInfo.name || `Membro ${i + 1}`, 
+    const membersDataForMeal = validMembers.map((m, i) => ({ 
+        nome: m.userInfo.name || `Membro ${i + 1}`, 
         fabbisogno_pasto: Math.round(m.tdee * lunchRatio)
     }));
 
@@ -390,7 +389,7 @@ const callGeminiAPI = async (prompt, schema) => {
         setIsGeneratingList(false);
     }
   };
-  
+  
   const exportPlanToJpeg = () => {
     if (!mealPlan || !imageLibraryLoaded) {
       setError("Il piano non è ancora stato generato o la libreria di esportazione non è pronta.");
@@ -406,7 +405,7 @@ const callGeminiAPI = async (prompt, schema) => {
         exportContainer.style.padding = '25px';
         exportContainer.style.backgroundColor = '#111827';
         exportContainer.style.fontFamily = 'sans-serif';
-        
+        
         const titleElement = document.createElement('h2');
         titleElement.innerText = 'Piano Alimentare Settimanale per l\'Ufficio';
         titleElement.style.textAlign = 'center';
@@ -414,14 +413,14 @@ const callGeminiAPI = async (prompt, schema) => {
         titleElement.style.marginBottom = '25px';
         titleElement.style.color = '#34d399';
         exportContainer.appendChild(titleElement);
-        
+        
         const tableClone = planElement.cloneNode(true);
         exportContainer.appendChild(tableClone);
         document.body.appendChild(exportContainer);
 
-        window.html2canvas(exportContainer, { 
+        window.html2canvas(exportContainer, { 
             useCORS: true,
-            scale: 2 
+            scale: 2 
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = 'piano-pranzi-ufficio.jpeg';
@@ -466,7 +465,7 @@ const callGeminiAPI = async (prompt, schema) => {
     document.body.removeChild(textArea);
     setTimeout(() => setCopyButtonText("Copia Testo"), 2000);
   };
-  
+  
   const copyRecipeToClipboard = () => {
     if (!recipeDetails || !selectedMeal) return;
     const recipeText = `Ricetta: ${selectedMeal.nome} (per ${familyMembers.length} persone)\n\nINGREDIENTI:\n- ${recipeDetails.ingredienti.join("\n- ")}\n\nISTRUZIONI:\n${recipeDetails.istruzioni}`;
@@ -483,7 +482,7 @@ const callGeminiAPI = async (prompt, schema) => {
       setSelectedMeal(null);
       setIsShoppingListModalOpen(false);
   };
-  
+  
   // --- JSX for Rendering ---
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -541,7 +540,7 @@ const callGeminiAPI = async (prompt, schema) => {
         <main>
           {isLoading && <div className="flex justify-center p-10"><Spinner /></div>}
           {error && <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg relative mb-4" role="alert"><strong className="font-bold">Errore: </strong><span className="block sm:inline">{error}</span><button onClick={() => setError(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3 text-2xl">&times;</button></div>}
-          
+          
           {mealPlan && (
             <div id="meal-plan-table" className="overflow-x-auto bg-gray-800 rounded-xl shadow-2xl p-2">
               <table className="min-w-full text-left table-fixed">
@@ -578,9 +577,9 @@ const callGeminiAPI = async (prompt, schema) => {
           )}
         </main>
       </div>
-      
+      
       {/* Modals */}
-      <RegenerationModal 
+      <RegenerationModal 
         isOpen={regenModalInfo.isOpen}
         onClose={closeRegenModal}
         onConfirm={handleConfirmRegeneration}
