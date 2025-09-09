@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 // --- Helper Components ---
 
+
 // Modal Component for displaying recipes and shopping lists
 const Modal = ({ title, children, onClose, onCopy, copyButtonText, copyDisabled = false }) => (
   <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
