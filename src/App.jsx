@@ -416,7 +416,7 @@ const exportPlanToPdf = () => {
             scale: 2 
         }).then(canvas => {
             const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const pdf = new window.jsPDF({
+            const pdf = new window.jspdf.jsPDF({
                 orientation: 'portrait',
                 unit: 'pt',
                 format: 'a4'
